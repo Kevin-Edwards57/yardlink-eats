@@ -11,6 +11,14 @@ Full-text search across the entire restaurant database
 Interactive MapKit integration with live restaurant pins
 Persistent favorites system using local SwiftData storage
 Errol — an AI cultural assistant powered by the Claude API, deployed via a secure Netlify serverless backend with zero client-side API key exposure
+
+## Screenshots
+
+![Restaurant List](screenshots/Yardlkink%20Eats%20%231.webp)
+![Map View](screenshots/Yardlkink%20Eats%20%232.webp)
+![Errol Chat](screenshots/Yardlkink%20Eats%20%233.webp)
+![Favorites](screenshots/Yardlkink%20Eats%20%234.webp)
+
 Tech Stack
 LayerTechnologyLanguageSwift 5.9UI FrameworkSwiftUILocal PersistenceSwiftDataCloud DatabaseFirebase FirestoreMapsMapKitAI AssistantClaude API (Anthropic) via Netlify Serverless FunctionsBackendNode.js on Netlify
 Architecture
