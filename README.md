@@ -1,36 +1,73 @@
 # YardLink Eats
 
-**NYC's premier Jamaican restaurant discovery platform — built for the culture.**
+**NYC's premier West Indian restaurant discovery platform — built for the culture.**
 
-Native iOS app · SwiftUI · Firebase · Claude AI · Currently in active development
+`SwiftUI` `Firebase` `Claude AI` `Core Location` `Google Places API` `Netlify` `Python/Flask`
 
----
-
-## Overview
-
-There is no centralized platform for finding authentic Jamaican food across New York City. Google Maps buries it. Yelp does not understand it. YardLink Eats fixes that.
-
-The app pulls from a live Firestore database of 260+ curated Jamaican restaurants across all five boroughs and Long Island, renders them on an interactive map, and wraps the entire experience with Errol — an AI-powered cultural guide who actually knows the difference between a roti shop in Richmond Hill and a jerk spot in the Bronx.
-
-This is not a generic restaurant app with a different color scheme. The data pipeline, the AI context architecture, and the product itself were all built from scratch by one person, for one community.
+> Built solo. Pre-App Store. Active development.
 
 ---
 
-## Features
+## What It Is
 
-- Borough-filtered discovery — Browse by Manhattan, Brooklyn, Queens, Bronx, Staten Island, or Long Island with real-time Firestore sync
-- Full-text search — Search across the entire restaurant database instantly
-- Interactive map — MapKit integration with live restaurant pins across the city
-- Favorites — Persistent local favorites system built with SwiftData
-- Errol — Context-aware AI cultural guide with deep knowledge of Jamaican cuisine, NYC neighborhoods, and Caribbean culture
+There is no centralized platform for finding authentic Jamaican and West Indian food across New York City. Google Maps buries it. Yelp does not understand it. YardLink Eats fixes that.
+
+A native iOS app backed by a live Firestore database of **508 curated West Indian restaurants** across all five NYC boroughs and Nassau County, Long Island. Every listing has real photos fetched from Google Places, AI-extracted must-try dishes pulled from customer reviews via Claude API, and GPS-based distance from the user's current location. The entire experience is wrapped with **Errol** — a location-aware AI cultural guide built on Claude who knows the difference between a roti shop in Richmond Hill and a jerk spot in the Bronx.
+
+This is not a generic restaurant app with a different color scheme. The data pipeline, the AI context architecture, and the product itself were built from scratch by one person, for one community.
 
 ---
 
 ## Screenshots
 
-| Restaurant List | Map View | Errol Chat | Favorites |
-|---|---|---|---|
-| ![List](screenshots/Yardlkink%20Eats%20%231.webp) | ![Map](screenshots/Yardlkink%20Eats%20%232.webp) | ![Errol](screenshots/Yardlkink%20Eats%20%233.webp) | ![Favorites](screenshots/Yardlkink%20Eats%20%234.webp) |
+<table>
+  <tr>
+    <td align="center"><b>Main Screen</b></td>
+    <td align="center"><b>Errol AI</b></td>
+    <td align="center"><b>Search</b></td>
+    <td align="center"><b>Map</b></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/Main_Screen.PNG" width="180"/></td>
+    <td><img src="screenshots/ErrolI.PNG" width="180"/></td>
+    <td><img src="screenshots/Search.PNG" width="180"/></td>
+    <td><img src="screenshots/Map.PNG" width="180"/></td>
+  </tr>
+  <tr>
+    <td align="center">508 spots · Near Me GPS · Must try dishes</td>
+    <td align="center">Location-aware AI with real distances</td>
+    <td align="center">Instant full-text search</td>
+    <td align="center">508 live pins across NYC + Long Island</td>
+  </tr>
+</table>
+
+---
+
+## Technical Highlights
+
+**End-to-end ownership across mobile, backend, AI, and data engineering — built and shipped solo.**
+
+- Automated Python/Flask scraping pipeline (Anansi) that queries Google Places across 80+ neighborhood-specific targets, deduplicates via MD5 fingerprint, geocodes, and writes structured data to Firestore
+- AI enrichment pipeline that fetches Google Places customer reviews, sends to Claude API (`claude-sonnet-4-6`), extracts top must-try dishes per restaurant, and writes structured output back to Firestore — 419 of 441 restaurants enriched in a single pipeline run
+- Photo pipeline that fetches from Google Places Photos API, uploads to Firebase Storage, and syncs `photoURL` back to Firestore per restaurant
+- Location-aware AI context architecture — user's GPS coordinates injected into Claude's system prompt at request time, with pre-computed distances to all 508 restaurants before every API call. Errol recommends the nearest matching spots by name, neighborhood, and exact mileage
+- Serverless proxy pattern via Netlify Functions — Anthropic API key lives server-side in Netlify's environment, never touches the iOS binary, zero credential exposure through App Store submission or binary reverse engineering
+- Shared `LocationManager` (`CLLocationManager` wrapper as `ObservableObject`) initialized once in `ContentView` and injected into both `RootView` for Near Me list sorting and `ErrolService` for location-aware prompt assembly — single source of truth for user coordinates across the full app
+- Real-time Firestore listener with `approved == true` field gating — unapproved listings are invisible to the iOS app until manually reviewed
+
+---
+
+## Features
+
+- **508 curated West Indian restaurants** — Jamaican, Trinidadian, Guyanese, Barbadian spots across all five boroughs and Nassau County, Long Island
+- **Near Me GPS sorting** — one tap sorts all 508 restaurants by real distance from the user's current location, with mileage shown on every card
+- **Borough filtering** — Brooklyn, Queens, Bronx, Manhattan, Staten Island, Nassau County chips with real-time Firestore sync
+- **Full-text search** — instant search across the entire live database
+- **Must Try dishes** — AI-extracted from real Google Places customer reviews via Claude API
+- **Real restaurant photos** — fetched from Google Places Photos API, hosted in Firebase Storage
+- **Interactive map** — 508 live MapKit pins across NYC and Long Island
+- **Favorites** — persistent local favorites via SwiftData and AppStorage
+- **Errol** — location-aware AI cultural guide powered by Claude. Knows your exact GPS position. Recommends the nearest matching restaurants with exact distances in natural language
 
 ---
 
@@ -42,133 +79,134 @@ This is not a generic restaurant app with a different color scheme. The data pip
 | UI Framework | SwiftUI |
 | Local Persistence | SwiftData |
 | Cloud Database | Firebase Firestore |
-| Maps | MapKit |
-| AI Assistant | Claude API (Anthropic) |
+| Photo Storage | Firebase Storage |
+| Maps | MapKit + Core Location |
+| AI Model | Anthropic Claude (`claude-sonnet-4-6`) |
 | Serverless Backend | Node.js via Netlify Functions |
+| Data Pipeline | Python 3 / Flask (Anansi) |
+| Photo Pipeline | Google Places Photos API → Firebase Storage → Firestore |
+| Must Try Pipeline | Google Places Reviews → Claude API → Firestore |
 
 ---
 
 ## System Architecture
 
 ```
-+----------------------------------------------------------+
-|                      iOS App (SwiftUI)                   |
-|                                                          |
-|   +-----------+    +----------------+    +-----------+   |
-|   | RootView  |    | RestaurantMap  |    | Favorites |   |
-|   | (Browse / |    |     View       |    |   View    |   |
-|   |  Search)  |    |   (MapKit)     |    | (SwiftData|   |
-|   +-----+-----+    +-------+--------+    +-----------+   |
-|         |                  |                             |
-|         +--------+---------+                            |
-|                  |                                       |
-|        +---------+---------+     +-------------------+  |
-|        | FirestoreService  |     |   ErrolChatView   |  |
-|        | (Real-time sync)  |     | (Floating overlay)|  |
-|        +---------+---------+     +---------+---------+  |
-+------------------|--------------------------|-----------+
-                   |                          |
-                   v                          v
-        +--------------------+    +----------------------+
-        |  Firebase          |    |  ErrolService.swift  |
-        |  Firestore         |    |  (API client)        |
-        |  260+ restaurants  |    +----------+-----------+
-        |  live database     |               |
-        +--------------------+               | HTTPS POST
-                                             v
-                                  +----------------------+
-                                  |  Netlify Serverless  |
-                                  |  Function (errol.js) |
-                                  |  Node.js runtime     |
-                                  +----------+-----------+
-                                             |
-                                             v
-                                  +----------------------+
-                                  |  Anthropic Claude    |
-                                  |  API                 |
-                                  +----------------------+
++---------------------------------------------------------------+
+|                        iOS App (SwiftUI)                      |
+|                                                               |
+|   ContentView                                                 |
+|   ├── LocationManager (shared ObservableObject)               |
+|   │     CLLocationManager wrapper                             |
+|   │     feeds RootView + ErrolService simultaneously          |
+|   │                                                           |
+|   ├── RootView                                                |
+|   │     Borough filter chips                                  |
+|   │     Full-text search                                      |
+|   │     Near Me toggle (GPS sort by distance)                 |
+|   │     LazyVStack card list with photos + must try           |
+|   │                                                           |
+|   ├── FirestoreService                                        |
+|   │     Real-time listener                                    |
+|   │     approved == true filter                               |
+|   │     508 restaurants synced live                           |
+|   │                                                           |
+|   └── ErrolOverlay                                            |
+|         Floating chat UI                                      |
+|         Receives Firestore restaurants + GPS location         |
+|         ErrolService builds dynamic prompt per request        |
++---|---------------------------|--------------------------------+
+    |                           |
+    v                           v
++--------------------+   +---------------------------+
+| Firebase           |   | ErrolService.swift        |
+| Firestore          |   | System prompt includes:   |
+| 508 restaurants    |   | - Full 508 restaurant DB  |
+| Firebase Storage   |   | - GPS distance per spot   |
+| (photos)           |   | - Cultural persona        |
++--------------------+   +-----------+---------------+
+                                     |
+                                     | HTTPS POST
+                                     v
+                          +---------------------+
+                          | Netlify Serverless  |
+                          | errol.js            |
+                          | API key server-side |
+                          +----------+----------+
+                                     |
+                                     v
+                          +---------------------+
+                          | Anthropic Claude    |
+                          | claude-sonnet-4-6   |
+                          +---------------------+
 ```
 
 ---
 
 ## Errol — AI Cultural Guide
 
-Errol is the core engineering differentiator of this project. He is not a wrapper around a generic model with a custom name. The context architecture, the system prompt design, and the depth of knowledge he carries are what make him useful in a way no generic food app can replicate.
+Errol is the core engineering differentiator. He is not a generic chatbot with a custom name — the context architecture and real-time location integration are what make him genuinely useful.
 
-### What Errol Can Do
+**Location-aware recommendation in natural language:**
 
-**Restaurant Discovery**
+> **User:** "I'm feeling like eating jerk pork"
+>
+> **Errol:** "Yooo jerk pork?? You have EXCELLENT taste. That smoky, spicy, fall-off-the-bone goodness — nothing like it. Here are your closest spots that serve jerk pork:
+> 1. Island Jerk (North Babylon) — 3.8 miles away
+> 2. Island Jerk Caribbean Cuisine (Wyandanch) — 5.8 miles away
+> 3. Jamrock Kitchen (Copiague) — 7.6 miles away"
 
-Errol has direct access to the full live Firestore database and answers natural language queries against it in real time:
+**How the prompt is built per request:**
 
-- "What is the best oxtail spot in Queens?"
-- "I want jerk chicken in Brooklyn, what do you recommend?"
-- "Find me a Jamaican spot in the Bronx with curry goat"
+On every message, `ErrolService.swift` dynamically assembles the system prompt with:
 
-Every recommendation is grounded in the actual database. If a restaurant is not in the dataset, Errol says so — he does not hallucinate results.
+1. **Persona** — culturally fluent, Queens-aware, grounded in Jamaican and West Indian diaspora knowledge
+2. **Full database** — all 508 approved restaurant records: name, borough, address, phone, website, must-try dishes
+3. **GPS distances** — pre-computed distance from the user's real `CLLocation` to every restaurant in the database, labeled inline
 
-**Jamaican Food and Culture Knowledge**
+This gives Errol real-time database access and real-time location awareness with no vector search, no RAG pipeline, and no embedding lookup latency. Full context injection at this dataset scale is the most reliable and lowest-latency approach.
 
-Errol carries deep knowledge of Jamaican cuisine and Caribbean culture that goes well beyond restaurant listings:
+**Zero client-side key exposure:**
 
-- The history and regional variations of dishes like jerk, ackee and saltfish, escovitch fish, and brown stew chicken
-- What to order if you have never had Jamaican food before
-- The cultural difference between Jamaican, Trinidadian, and Guyanese cuisine
-- Why certain dishes are tied to certain occasions, what "yard food" means, and the significance of Jamaican food in the diaspora
-
-**Proximity and Neighborhood Awareness**
-
-Errol understands NYC geography at the neighborhood level, not just the borough level:
-
-- "I am in Flatbush, what is close to me?" — Errol knows Flatbush is a Caribbean stronghold and filters recommendations accordingly
-- "I am near Jamaica Avenue in Queens, what is in the area?" — Errol understands the corridor
-- Recommendations are cross-referenced against the live database so every result is a real, approved listing
-
-**NYC Neighborhood Cultural Context**
-
-This is the capability that separates Errol from every other food discovery tool. He does not just know where restaurants are — he understands why certain neighborhoods have the food scenes they do:
-
-- Richmond Hill and South Ozone Park in Queens as the Indo-Caribbean and roti hub
-- Flatbush, Crown Heights, and Canarsie in Brooklyn as the core of the Jamaican diaspora in NYC
-- The Bronx corridor along White Plains Road and Gun Hill Road
-- Why the food in these neighborhoods hits different from anything in a tourist-facing Manhattan spot
-
-A user who just moved to NYC and wants to understand where the culture actually lives gets more from Errol than they would from any map or review platform.
+Every request routes through `errol.js` on Netlify. The Anthropic API key lives in Netlify's server environment. The iOS binary contains no API credentials.
 
 ---
 
-### How Errol Works — Engineering Detail
+## Data Pipeline — Anansi
 
-**Context Injection at Request Time**
+A custom Python/Flask scraping and enrichment system built alongside the iOS app, with a web dashboard for monitoring pipeline runs.
 
-When a user sends a message, `ErrolService.swift` does not just forward the text to Claude. Before the API call is made, the full restaurant dataset is serialized and injected directly into the system prompt. Errol receives structured data for every restaurant in the database — name, borough, address, phone, website, must-try dishes, and category — on every single request.
+```
+anansi_app.py
+    Flask web app with live activity log dashboard
+    Queries Google Places Text Search across 80+ neighborhood targets
+    Covers all five NYC boroughs + Nassau County, Long Island
+    MD5 fingerprint deduplication prevents re-scraping known spots
+    Writes to jamaican_restaurants staging collection in Firestore
 
-This gives Errol real-time access to the live database without any separate retrieval step. No vector search, no RAG pipeline, no latency from an embedding lookup. The dataset is compact enough that full context injection is the most reliable and lowest-latency approach at this scale, and it guarantees Errol is always working from current, approved data.
+migrate_restaurants.py
+    Schema-validated migration from staging → production collection
+    Field allowlist enforcement (only fields the iOS app understands)
+    approved defaults to false — every listing requires manual review
+    before it appears in the app
 
-**Why This Approach**
+fetch_restaurant_photos.py
+    Calls Google Places Photos API for each restaurant
+    Uploads full-resolution photo to Firebase Storage
+    Writes photoURL back to Firestore document
 
-Most AI-powered apps at this scale bolt a chat interface onto a generic model and call it done. The decision here was to make the data the context — every query Errol answers is grounded in real, curated, human-reviewed restaurant records. That is not something you replicate by prompting a generic model with a borough name.
+fix_missing_photos.py
+    Secondary photo pass for restaurants without Place ID doc IDs
+    Searches Google Places by restaurant name + address
+    Fills in photos missed by the primary pipeline
 
-**Serverless Proxy — Zero Client-Side Key Exposure**
-
-The iOS app never calls the Anthropic API directly. Every request is routed through a Netlify serverless function (`errol.js`) that holds the API key server-side as an environment variable in Netlify's dashboard. This means:
-
-- No API key embedded in the app binary
-- No credential exposure in App Store submissions or through reverse engineering
-- Request validation and error handling handled at the function layer
-- Clean separation between the iOS client and the AI backend
-
-**System Prompt Design**
-
-Errol's system prompt establishes his persona — Queens-aware, culturally fluent, direct — injects the full restaurant JSON, and instructs him to ground every recommendation in the actual data. He does not hallucinate spots. If a restaurant is not in the database, he redirects rather than inventing a result.
-
-**Scaling Path**
-
-The current architecture handles 260+ restaurants with full context injection per request. As the dataset scales, the roadmap includes:
-
-- Pre-filtering context by borough or neighborhood before prompt assembly to reduce token usage
-- Semantic search layer using embeddings to retrieve the most relevant restaurant subset before injection
-- Firestore vector search integration for proximity-based pre-filtering before the API call
+enrich_must_try.py
+    Fetches up to 5 customer reviews per restaurant from Google Places
+    Sends reviews to Claude API with structured extraction prompt
+    Claude identifies the 3-5 most praised dishes from real reviews
+    Writes comma-separated dish list to mustTry field in Firestore
+    Result: 419 of 441 eligible restaurants enriched in one run
+```
 
 ---
 
@@ -176,80 +214,75 @@ The current architecture handles 260+ restaurants with full context injection pe
 
 ```
 YardLink Eats/
-+-- ContentView.swift          # Root TabView + Errol floating overlay
-+-- RootView.swift             # Restaurant list with borough filter + search
-+-- RestaurantModel.swift      # SwiftData model with Firestore bridge
-+-- RestaurantMapView.swift    # MapKit restaurant map
-+-- ErrolChatView.swift        # AI assistant chat UI
-+-- ErrolService.swift         # Claude API integration via Netlify proxy
-+-- FavoritesView.swift        # Saved favorites screen
-+-- FavoritesStore.swift       # Favorites state management
-+-- FirestoreService.swift     # Firestore real-time listener
+├── ContentView.swift           Root TabView, shared LocationManager, Errol overlay
+├── RootView.swift              List view, borough chips, search, Near Me toggle
+├── LocationManager.swift       CLLocationManager wrapper, shared ObservableObject
+├── Restaurant.swift            Core restaurant model (id, name, borough, coords, etc.)
+├── RestaurantModel.swift       SwiftData model with Firestore bridge
+├── RestaurantRowView.swift     Premium card UI — photo, borough tag, distance, must try
+├── RestaurantDetailView.swift  Hero photo + full restaurant detail view
+├── RestaurantMapView.swift     MapKit map with 508 live annotation pins
+├── ErrolChatView.swift         Chat UI + floating Jamaican flag overlay button
+├── ErrolService.swift          Claude API client, location-aware dynamic prompt builder
+├── FavoritesView.swift         Saved restaurants screen
+├── FavoritesStore.swift        Favorites persistence via AppStorage
+└── FirestoreService.swift      Real-time Firestore listener, approved field filter
 ```
-
----
-
-## Data Pipeline
-
-The restaurant database is built and maintained through Anansi, a custom Python and Flask scraping and enrichment pipeline developed alongside this app. The full pipeline:
-
-1. `anansi_app.py` — Scrapes and aggregates Jamaican restaurant data across NYC sources via the `/start` endpoint
-2. `geocode_restaurants.py` — Enriches records with coordinates via Google Places API
-3. `fix_firestore.py` — Cleans and normalizes Firestore documents
-4. `migrate_restaurants.py` — Schema-validated migration to the production `restaurants` collection with field allowlist enforcement
-
-All 260+ listings are manually reviewed and approved before appearing in the app. No listing goes live without a human check.
 
 ---
 
 ## Getting Started
 
-**Prerequisites**
-- Xcode 15 or higher
-- iOS 17 or higher target
-- Active Firebase project with Firestore enabled
-- Netlify account for serverless function deployment
+### Prerequisites
 
-**Setup**
+- Xcode 15+
+- iOS 17+ target
+- Firebase project with Firestore and Storage enabled
+- Netlify account for serverless function deployment
+- Google Places API key
+- Anthropic API key
+
+### Installation
 
 ```bash
-# 1. Clone the repo
+# 1. Clone
 git clone https://github.com/Kevin-Edwards57/yardlink-eats.git
 
-# 2. Add your Firebase config
+# 2. Add Firebase config
 # Drop GoogleService-Info.plist into the YardLink Eats/ directory in Xcode
 
-# 3. Deploy the Netlify function
+# 3. Deploy Netlify function
 # Copy errol.js to your Netlify functions folder
-# Set ANTHROPIC_API_KEY as an environment variable in the Netlify dashboard
+# Set ANTHROPIC_API_KEY as environment variable in Netlify dashboard
 
-# 4. Update the function URL
-# In ErrolService.swift, replace the Netlify function URL with your deployment URL
+# 4. Update function URL
+# In ErrolService.swift, set apiURL to your Netlify deployment URL
 
 # 5. Build and run
-# Open YardLink Eats.xcodeproj in Xcode and run on simulator or device
+# Open YardLink Eats.xcodeproj in Xcode
 ```
 
 ---
 
 ## Roadmap
 
-- Restaurant photos via Google Places API to Firebase Storage pipeline
-- App Store submission
-- Errol context optimization for larger dataset scale
-- User-submitted restaurant additions with admin approval flow
-- Neighborhood-level filtering in browse and search views
+- [x] 508 curated West Indian restaurants across NYC + Nassau County
+- [x] Real photos via Google Places → Firebase Storage pipeline
+- [x] AI must-try dish extraction from real customer reviews
+- [x] GPS Near Me sorting with real-time distance on every card
+- [x] Errol location-aware recommendations with exact mileage
+- [x] Serverless proxy — zero client-side API key exposure
+- [ ] App Store submission
+- [ ] Push notifications for nearby featured restaurants (APNs + FCM)
+- [ ] Featured listings monetization ($50–150/month per restaurant)
+- [ ] Errol context optimization via RAG/embeddings for larger dataset scale
+- [ ] Android version (Kotlin — same Firestore backend, no data migration needed)
+- [ ] Expansion beyond NYC
 
 ---
 
 ## Built By
 
-YardLink Studio — NYC-based digital agency building websites, mobile apps, and AI tools for small businesses.
+**YardLink Studio** — NYC-based digital agency building websites, mobile apps, and AI tools for small businesses.
 
-yardlinkstudio.com · yardlinkstudio@gmail.com
-
----
-
-## License
-
-Private. All rights reserved. YardLink Studio 2025
+[yardlinkstudio.com](https://yardlinkstudio.com) · yardlinkstudio@gmail.com
