@@ -1,6 +1,6 @@
 # YardLink Eats
 
-**NYC's premier West Indian restaurant discovery platform — built for the culture.**
+**NYC's premier Jamaican restaurant discovery platform — built for the culture.**
 
 `SwiftUI` `Firebase` `Claude AI` `Core Location` `Google Places API` `Netlify` `Python/Flask`
 
